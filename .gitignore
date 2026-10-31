@@ -1,0 +1,48 @@
+# Compilação Maven
+target/
+build/
+
+# NetBeans
+nbproject/private/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+*.orig
+
+# IntelliJ IDEA
+.idea/
+*.iml
+
+# Eclipse
+.classpath
+.project
+.settings/
+
+# Arquivos compilados Java
+*.class
+*.jar
+*.war
+*.ear
+
+# Logs
+*.log
+
+# Arquivos temporários
+*.tmp
+*.bak
+*.swp
+*~
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Configurações locais
+.env
+.env.*
+!.env.example
+
+# Configurações locais da aplicação
+application-local.properties

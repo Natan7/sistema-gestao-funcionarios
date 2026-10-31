@@ -1,0 +1,16 @@
+-- Execute conectado ao banco sistema_gestao_funcionarios.
+CREATE TABLE IF NOT EXISTS usuarios (
+    id SERIAL PRIMARY KEY,
+    nome VARCHAR(150) NOT NULL,
+    email VARCHAR(150) NOT NULL UNIQUE,
+    senha VARCHAR(64) NOT NULL,
+    data_cadastro TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS funcionarios (
+    id SERIAL PRIMARY KEY,
+    nome VARCHAR(150) NOT NULL,
+    data_admissao DATE NOT NULL,
+    salario NUMERIC(12, 2) NOT NULL CHECK (salario > 0),
+    status BOOLEAN NOT NULL DEFAULT TRUE
+);
