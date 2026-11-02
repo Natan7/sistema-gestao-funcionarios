@@ -4,6 +4,7 @@ import br.com.sistemagestao.model.Funcionario;
 import br.com.sistemagestao.service.FuncionarioService;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.UUID;
 
 public class FuncionarioController {
 
@@ -17,15 +18,15 @@ public class FuncionarioController {
         this.funcionarioService = funcionarioService;
     }
 
-    public List<Funcionario> listarTodos() throws SQLException {
-        return funcionarioService.listarTodos();
+    public List<Funcionario> listarTodos(UUID usuarioUuid) throws SQLException {
+        return funcionarioService.listarTodos(usuarioUuid);
     }
 
-    public Funcionario salvar(Funcionario funcionario) throws SQLException {
-        return funcionarioService.salvar(funcionario);
+    public Funcionario salvar(Funcionario funcionario, UUID usuarioUuid) throws SQLException {
+        return funcionarioService.salvar(funcionario, usuarioUuid);
     }
 
-    public void excluir(int id) throws SQLException {
-        funcionarioService.excluir(id);
+    public void excluir(UUID uuid, UUID usuarioUuid) throws SQLException {
+        funcionarioService.excluir(uuid, usuarioUuid);
     }
 }

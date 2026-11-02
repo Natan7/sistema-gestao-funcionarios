@@ -63,7 +63,7 @@ public class TelaPrincipal extends JFrame {
         funcionarios.setForeground(Color.WHITE);
         funcionarios.setFocusPainted(false);
         funcionarios.setBorder(BorderFactory.createEmptyBorder(13, 16, 13, 12));
-        funcionarios.addActionListener(evento -> new TelaFuncionarios(this).setVisible(true));
+        funcionarios.addActionListener(evento -> new TelaFuncionarios(this, usuario).setVisible(true));
         JButton sair = new JButton("Sair da conta");
         sair.setHorizontalAlignment(SwingConstants.LEFT);
         sair.setForeground(new Color(221, 233, 235));
@@ -99,7 +99,7 @@ public class TelaPrincipal extends JFrame {
         abrir.setForeground(Color.WHITE);
         abrir.setFocusPainted(false);
         abrir.setPreferredSize(new Dimension(200, 42));
-        abrir.addActionListener(evento -> new TelaFuncionarios(this).setVisible(true));
+        abrir.addActionListener(evento -> new TelaFuncionarios(this, usuario).setVisible(true));
         boasVindas.add(abrir, c);
         conteudo.add(boasVindas);
         raiz.add(conteudo, BorderLayout.CENTER);
@@ -107,7 +107,10 @@ public class TelaPrincipal extends JFrame {
     }
 
     private void sair() {
+        javax.swing.UIManager.put("OptionPane.yesButtonText", "Sim");
+        javax.swing.UIManager.put("OptionPane.noButtonText", "Não");
         int resposta = javax.swing.JOptionPane.showConfirmDialog(this, "Deseja sair da sua conta?", "Confirmar saída", javax.swing.JOptionPane.YES_NO_OPTION);
+
         if (resposta == javax.swing.JOptionPane.YES_OPTION) {
             dispose();
             new TelaLogin().setVisible(true);

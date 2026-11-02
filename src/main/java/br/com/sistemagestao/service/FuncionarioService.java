@@ -5,6 +5,7 @@ import br.com.sistemagestao.model.Funcionario;
 import br.com.sistemagestao.util.Validacao;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.UUID;
 
 public class FuncionarioService {
 
@@ -18,25 +19,38 @@ public class FuncionarioService {
         this.funcionarioDAO = funcionarioDAO;
     }
 
-    public List<Funcionario> listarTodos() throws SQLException {
-        return funcionarioDAO.listarTodos();
+    public List<Funcionario> listarTodos(UUID usuarioUuid) throws SQLException {
+        validarUsuario(usuarioUuid);
+        return funcionarioDAO.listarTodos(usuarioUuid);
     }
 
-    public Funcionario salvar(Funcionario funcionario) throws SQLException {
+    public Funcionario salvar(Funcionario funcionario, UUID usuarioUuid) throws SQLException {
+        validarUsuario(usuarioUuid);
         Validacao.validarFuncionario(funcionario.getNome(), funcionario.getDataAdmissao(), funcionario.getSalario());
         funcionario.setNome(funcionario.getNome().trim());
-        return funcionario.getId() == 0 ? funcionarioDAO.inserir(funcionario) : atualizar(funcionario);
+        return funcionario.getUuid() == null ? funcionarioDAO.inserir(funcionario, usuarioUuid) : atualizar(funcionario, usuarioUuid);
     }
 
-    public void excluir(int id) throws SQLException {
-        if (id <= 0) {
+    public void excluir(UUID uuid, UUID usuarioUuid) throws SQLException {
+        validarUsuario(usuarioUuid);
+        if (uuid == null) {
             throw new IllegalArgumentException("Selecione um funcionário válido.");
         }
-        funcionarioDAO.excluir(id);
+        if (!funcionarioDAO.excluir(uuid, usuarioUuid)) {
+            throw new IllegalArgumentException("O funcionário não existe ou não pertence a este usuário.");
+        }
     }
 
-    private Funcionario atualizar(Funcionario funcionario) throws SQLException {
-        funcionarioDAO.atualizar(funcionario);
+    private Funcionario atualizar(Funcionario funcionario, UUID usuarioUuid) throws SQLException {
+        if (!funcionarioDAO.atualizar(funcionario, usuarioUuid)) {
+            throw new IllegalArgumentException("O funcionário não existe ou não pertence a este usuário.");
+        }
         return funcionario;
+    }
+
+    private static void validarUsuario(UUID usuarioUuid) {
+        if (usuarioUuid == null) {
+            throw new IllegalArgumentException("Usuário autenticado inválido.");
+        }
     }
 }

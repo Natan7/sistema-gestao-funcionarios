@@ -2,10 +2,11 @@ package br.com.sistemagestao.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.UUID;
 
 public class Funcionario {
 
-    private int id;
+    private UUID uuid;
     private String nome;
     private LocalDate dataAdmissao;
     private BigDecimal salario;
@@ -14,16 +15,16 @@ public class Funcionario {
     public Funcionario() {
     }
 
-    public Funcionario(int id, String nome, LocalDate dataAdmissao, BigDecimal salario, boolean status) {
-        this.id = id;
+    public Funcionario(UUID uuid, String nome, LocalDate dataAdmissao, BigDecimal salario, boolean status) {
+        this.uuid = uuid;
         this.nome = nome;
         this.dataAdmissao = dataAdmissao;
         this.salario = salario;
         this.status = status;
     }
 
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
+    public UUID getUuid() { return uuid; }
+    public void setUuid(UUID uuid) { this.uuid = uuid; }
     public String getNome() { return nome; }
     public void setNome(String nome) { this.nome = nome; }
     public LocalDate getDataAdmissao() { return dataAdmissao; }

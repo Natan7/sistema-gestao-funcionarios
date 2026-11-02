@@ -2,7 +2,10 @@ package br.com.sistemagestao.view;
 
 import br.com.sistemagestao.controller.FuncionarioController;
 import br.com.sistemagestao.model.Funcionario;
+import br.com.sistemagestao.model.Usuario;
 import br.com.sistemagestao.util.Formatadores;
+import br.com.sistemagestao.util.FiltroSalario;
+import br.com.sistemagestao.util.Validacao;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -13,10 +16,16 @@ import java.awt.Insets;
 import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.ResolverStyle;
 import java.util.List;
+import java.util.Comparator;
+import java.util.UUID;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JComponent;
+import javax.swing.JFormattedTextField;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -25,28 +34,40 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
+import javax.swing.SwingConstants;
+import javax.swing.text.MaskFormatter;
+import java.text.ParseException;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.TableRowSorter;
 
 public class TelaFuncionarios extends JFrame {
 
     private static final Color PETROLEO = new Color(17, 61, 75);
+    private static final DateTimeFormatter FORMATO_DATA = DateTimeFormatter.ofPattern("dd/MM/uuuu").withResolverStyle(ResolverStyle.STRICT);
     private final FuncionarioController controller = new FuncionarioController();
+    private final UUID usuarioUuid;
     private final JTextField campoNome = new JTextField(22);
-    private final JTextField campoAdmissao = new JTextField(12);
+    private final JFormattedTextField campoAdmissao = criarCampoAdmissao();
     private final JTextField campoSalario = new JTextField(12);
     private final JCheckBox campoStatus = new JCheckBox("Ativo", true);
     private final JLabel mensagem = new JLabel(" ");
-    private final DefaultTableModel modelo = new DefaultTableModel(new Object[]{"ID", "Nome", "Admissão", "Salário", "Status"}, 0) {
+    private final DefaultTableModel modelo = new DefaultTableModel(new Object[]{"UUID", "Nº", "Nome", "Admissão", "Salário", "Status"}, 0) {
         @Override
         public boolean isCellEditable(int linha, int coluna) {
             return false;
         }
     };
     private final JTable tabela = new JTable(modelo);
-    private int funcionarioSelecionado;
+    private final TableRowSorter<DefaultTableModel> ordenador = new TableRowSorter<>(modelo);
+    private UUID funcionarioSelecionado;
 
-    public TelaFuncionarios(JFrame proprietaria) {
+    public TelaFuncionarios(JFrame proprietaria, Usuario usuario) {
         super("Gestão de Funcionários | Funcionários");
+        if (usuario == null || usuario.getUuid() == null) {
+            throw new IllegalArgumentException("É necessário um usuário autenticado para abrir a lista de funcionários.");
+        }
+        usuarioUuid = usuario.getUuid();
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setMinimumSize(new Dimension(900, 600));
         setSize(1120, 720);
@@ -74,6 +95,25 @@ public class TelaFuncionarios extends JFrame {
         tabela.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         tabela.setFillsViewportHeight(true);
         tabela.getTableHeader().setFont(new Font("SansSerif", Font.BOLD, 12));
+        ordenador.setSortable(0, false);
+        ordenador.setSortable(1, false);
+        ordenador.setComparator(3, Comparator.comparing((String valor) -> LocalDate.parse(valor, FORMATO_DATA)));
+        ordenador.setComparator(4, Comparator.comparing((String valor) -> valorNumericoSalario(valor)));
+        tabela.setRowSorter(ordenador);
+        tabela.removeColumn(tabela.getColumnModel().getColumn(0));
+        tabela.getColumnModel().getColumn(0).setCellRenderer(new DefaultTableCellRenderer() {
+            @Override
+            public java.awt.Component getTableCellRendererComponent(JTable tabela, Object valor, boolean selecionada,
+                    boolean foco, int linha, int coluna) {
+                super.getTableCellRendererComponent(tabela, valor, selecionada, foco, linha, coluna);
+                setHorizontalAlignment(SwingConstants.CENTER);
+                setText(Integer.toString(linha + 1));
+                return this;
+            }
+        });
+        tabela.getColumnModel().getColumn(0).setMinWidth(48);
+        tabela.getColumnModel().getColumn(0).setPreferredWidth(48);
+        tabela.getColumnModel().getColumn(0).setMaxWidth(56);
         tabela.getSelectionModel().addListSelectionListener(evento -> {
             if (!evento.getValueIsAdjusting()) {
                 preencherFormulario();
@@ -102,7 +142,8 @@ public class TelaFuncionarios extends JFrame {
         c.insets = new Insets(4, 6, 4, 6);
         c.fill = GridBagConstraints.HORIZONTAL;
         adicionarCampo(painel, c, 0, 0, "Nome", campoNome);
-        adicionarCampo(painel, c, 1, 0, "Admissão (AAAA-MM-DD)", campoAdmissao);
+        adicionarCampo(painel, c, 1, 0, "Admissão (DD/MM/AAAA)", campoAdmissao);
+        FiltroSalario.aplicar(campoSalario);
         adicionarCampo(painel, c, 2, 0, "Salário", campoSalario);
         c.gridx = 3;
         c.gridy = 1;
@@ -130,7 +171,7 @@ public class TelaFuncionarios extends JFrame {
         return painel;
     }
 
-    private static void adicionarCampo(JPanel painel, GridBagConstraints c, int coluna, int linha, String rotulo, JTextField campo) {
+    private static void adicionarCampo(JPanel painel, GridBagConstraints c, int coluna, int linha, String rotulo, JComponent campo) {
         c.gridx = coluna;
         c.gridy = linha;
         JLabel label = new JLabel(rotulo);
@@ -143,10 +184,17 @@ public class TelaFuncionarios extends JFrame {
 
     private void carregarFuncionarios() {
         try {
-            List<Funcionario> funcionarios = controller.listarTodos();
-            modelo.setRowCount(0);
-            for (Funcionario funcionario : funcionarios) {
-                modelo.addRow(new Object[]{funcionario.getId(), funcionario.getNome(), Formatadores.data(funcionario.getDataAdmissao()), Formatadores.moeda(funcionario.getSalario()), funcionario.isStatus() ? "Ativo" : "Inativo"});
+            List<Funcionario> funcionarios = controller.listarTodos(usuarioUuid);
+            tabela.clearSelection();
+            funcionarioSelecionado = null;
+            tabela.setRowSorter(null);
+            try {
+                modelo.setRowCount(0);
+                for (Funcionario funcionario : funcionarios) {
+                    modelo.addRow(new Object[]{funcionario.getUuid(), null, funcionario.getNome(), Formatadores.data(funcionario.getDataAdmissao()), Formatadores.moeda(funcionario.getSalario()), funcionario.isStatus() ? "Ativo" : "Inativo"});
+                }
+            } finally {
+                tabela.setRowSorter(ordenador);
             }
             mensagem.setText(" ");
         } catch (SQLException exception) {
@@ -159,23 +207,31 @@ public class TelaFuncionarios extends JFrame {
         if (linha < 0) {
             return;
         }
-        funcionarioSelecionado = (int) modelo.getValueAt(linha, 0);
-        campoNome.setText((String) modelo.getValueAt(linha, 1));
-        campoAdmissao.setText(LocalDate.parse(modelo.getValueAt(linha, 2).toString(), java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")).toString());
-        String salario = modelo.getValueAt(linha, 3).toString().replaceAll("[^0-9,.-]", "");
+        linha = tabela.convertRowIndexToModel(linha);
+        funcionarioSelecionado = (UUID) modelo.getValueAt(linha, 0);
+        campoNome.setText((String) modelo.getValueAt(linha, 2));
+        campoAdmissao.setText(modelo.getValueAt(linha, 3).toString());
+        String salario = modelo.getValueAt(linha, 4).toString().replaceAll("[^0-9,.-]", "");
+        if (salario.contains(",")) {
+            salario = salario.replace(".", "");
+        }
         campoSalario.setText(salario);
-        campoStatus.setSelected("Ativo".equals(modelo.getValueAt(linha, 4)));
+        campoStatus.setSelected("Ativo".equals(modelo.getValueAt(linha, 5)));
         mensagem.setText(" ");
     }
 
     private void salvar() {
         try {
-            String textoSalario = campoSalario.getText().trim().replace("R$", "").replace(" ", "");
+            String textoSalario = campoSalario.getText().replace("R$", "");
+            if (Validacao.contemEspacos(textoSalario) || Validacao.contemEspacos(campoAdmissao.getText())) {
+                throw new IllegalArgumentException("Data e salário não podem conter espaços.");
+            }
             if (textoSalario.contains(",")) {
                 textoSalario = textoSalario.replace(".", "").replace(',', '.');
             }
-            Funcionario funcionario = new Funcionario(funcionarioSelecionado, campoNome.getText(), LocalDate.parse(campoAdmissao.getText().trim()), new BigDecimal(textoSalario), campoStatus.isSelected());
-            controller.salvar(funcionario);
+            LocalDate admissao = LocalDate.parse(campoAdmissao.getText(), FORMATO_DATA);
+            Funcionario funcionario = new Funcionario(funcionarioSelecionado, campoNome.getText(), admissao, new BigDecimal(textoSalario), campoStatus.isSelected());
+            controller.salvar(funcionario, usuarioUuid);
             limparFormulario();
             carregarFuncionarios();
             mensagem.setForeground(new Color(35, 122, 82));
@@ -190,14 +246,14 @@ public class TelaFuncionarios extends JFrame {
     }
 
     private void excluir() {
-        if (funcionarioSelecionado <= 0) {
+        if (funcionarioSelecionado == null) {
             mensagem.setText("Selecione um funcionário na tabela.");
             return;
         }
         int resposta = JOptionPane.showConfirmDialog(this, "Deseja excluir este funcionário?", "Confirmar exclusão", JOptionPane.YES_NO_OPTION);
         if (resposta == JOptionPane.YES_OPTION) {
             try {
-                controller.excluir(funcionarioSelecionado);
+                controller.excluir(funcionarioSelecionado, usuarioUuid);
                 limparFormulario();
                 carregarFuncionarios();
                 mensagem.setForeground(new Color(35, 122, 82));
@@ -210,11 +266,29 @@ public class TelaFuncionarios extends JFrame {
     }
 
     private void limparFormulario() {
-        funcionarioSelecionado = 0;
+        funcionarioSelecionado = null;
         tabela.clearSelection();
         campoNome.setText("");
         campoAdmissao.setText("");
         campoSalario.setText("");
         campoStatus.setSelected(true);
+    }
+
+    private static JFormattedTextField criarCampoAdmissao() {
+        try {
+            MaskFormatter formato = new MaskFormatter("##/##/####");
+            formato.setPlaceholderCharacter('_');
+            formato.setAllowsInvalid(false);
+            return new JFormattedTextField(formato);
+        } catch (ParseException exception) {
+            throw new IllegalStateException("Não foi possível configurar o campo de data.", exception);
+        }
+    }
+
+    private static BigDecimal valorNumericoSalario(String salarioFormatado) {
+        String valor = salarioFormatado.replaceAll("[^0-9,.-]", "")
+                .replace(".", "")
+                .replace(',', '.');
+        return new BigDecimal(valor);
     }
 }
