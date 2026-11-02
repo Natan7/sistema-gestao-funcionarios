@@ -11,7 +11,26 @@ public final class Validacao {
     }
 
     public static boolean emailValido(String email) {
-        return email != null && EMAIL.matcher(email.trim()).matches();
+        return email != null && !contemEspacos(email) && EMAIL.matcher(email).matches();
+    }
+
+    public static boolean contemEspacos(String texto) {
+        if (texto == null) {
+            return false;
+        }
+        return texto.codePoints().anyMatch(caractere -> Character.isWhitespace(caractere) || Character.isSpaceChar(caractere));
+    }
+
+    public static boolean contemEspacos(char[] texto) {
+        if (texto == null) {
+            return false;
+        }
+        for (char caractere : texto) {
+            if (Character.isWhitespace(caractere) || Character.isSpaceChar(caractere)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static void validarFuncionario(String nome, java.time.LocalDate admissao, BigDecimal salario) {

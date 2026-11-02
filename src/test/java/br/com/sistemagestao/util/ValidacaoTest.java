@@ -10,8 +10,21 @@ import org.junit.jupiter.api.Test;
 class ValidacaoTest {
 
     @Test
-    void aceitaEmailValidoComEspacosExternos() {
-        assertTrue(Validacao.emailValido("  equipe@empresa.com  "));
+    void aceitaEmailValidoSemEspacos() {
+        assertTrue(Validacao.emailValido("equipe@empresa.com"));
+    }
+
+    @Test
+    void rejeitaEmailComEspacosEmQualquerPosicao() {
+        assertTrue(!Validacao.emailValido(" equipe@empresa.com"));
+        assertTrue(!Validacao.emailValido("equipe @empresa.com"));
+        assertTrue(!Validacao.emailValido("equipe@empresa.com\u00a0"));
+    }
+
+    @Test
+    void detectaEspacosEmSenha() {
+        assertTrue(Validacao.contemEspacos("senha com espaço".toCharArray()));
+        assertTrue(!Validacao.contemEspacos("Senha123!".toCharArray()));
     }
 
     @Test

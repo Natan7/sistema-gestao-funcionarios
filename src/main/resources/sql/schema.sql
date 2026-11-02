@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS usuarios (
-    id SERIAL PRIMARY KEY,
+    uuid UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     nome VARCHAR(150) NOT NULL,
     email VARCHAR(150) NOT NULL UNIQUE,
     senha VARCHAR(64) NOT NULL,
@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
 );
 
 CREATE TABLE IF NOT EXISTS funcionarios (
-    id SERIAL PRIMARY KEY,
+    uuid UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     nome VARCHAR(150) NOT NULL,
     data_admissao DATE NOT NULL,
     salario NUMERIC(12, 2) NOT NULL CHECK (salario > 0),

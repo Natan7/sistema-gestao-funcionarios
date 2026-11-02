@@ -21,8 +21,11 @@ public class UsuarioService {
     }
 
     public Optional<Usuario> autenticar(String email, char[] senha) throws SQLException {
+        if (senha == null || Validacao.contemEspacos(senha) || !Validacao.emailValido(email)) {
+            return Optional.empty();
+        }
         String emailNormalizado = email == null ? "" : email.trim();
-        if (emailNormalizado.isEmpty() || senha == null || senha.length == 0 || !Validacao.emailValido(emailNormalizado)) {
+        if (emailNormalizado.isEmpty() || senha.length == 0) {
             return Optional.empty();
         }
         Optional<Usuario> usuario = usuarioDAO.buscarPorEmail(emailNormalizado);
@@ -34,6 +37,9 @@ public class UsuarioService {
 
     public Usuario cadastrar(String nome, String email, char[] senha) throws SQLException {
         String nomeNormalizado = nome == null ? "" : nome.trim();
+        if (!Validacao.emailValido(email)) {
+            throw new IllegalArgumentException("O e-mail não pode conter espaços e deve ser válido.");
+        }
         String emailNormalizado = email == null ? "" : email.trim();
         if (nomeNormalizado.length() < 2) {
             throw new IllegalArgumentException("Informe seu nome completo com pelo menos 2 caracteres.");
@@ -41,14 +47,14 @@ public class UsuarioService {
         if (!Validacao.emailValido(emailNormalizado)) {
             throw new IllegalArgumentException("Informe um e-mail válido.");
         }
-        if (senha == null || senha.length < 8) {
-            throw new IllegalArgumentException("A senha deve ter pelo menos 8 caracteres.");
+        if (senha == null || Validacao.contemEspacos(senha) || senha.length < 8) {
+            throw new IllegalArgumentException("A senha deve ter pelo menos 8 caracteres e não pode conter espaços.");
         }
         if (usuarioDAO.emailExiste(emailNormalizado)) {
             throw new SQLIntegrityConstraintViolationException("Este e-mail já está cadastrado.", "23505");
         }
         try {
-            return usuarioDAO.inserir(new Usuario(0, nomeNormalizado, emailNormalizado, Criptografia.sha256(senha), null));
+            return usuarioDAO.inserir(new Usuario(null, nomeNormalizado, emailNormalizado, Criptografia.sha256(senha), null));
         } catch (SQLException exception) {
             if ("23505".equals(exception.getSQLState())) {
                 throw new SQLIntegrityConstraintViolationException("Este e-mail já está cadastrado.", "23505", exception);

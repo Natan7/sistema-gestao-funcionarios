@@ -1,7 +1,10 @@
 package br.com.sistemagestao;
 
+import br.com.sistemagestao.connection.Conexao;
 import br.com.sistemagestao.view.TelaLogin;
 import com.formdev.flatlaf.FlatLightLaf;
+import java.sql.SQLException;
+import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
@@ -15,6 +18,16 @@ public final class App {
         UIManager.put("Component.arc", 10);
         UIManager.put("Button.arc", 10);
         UIManager.put("TextComponent.arc", 8);
+        try {
+            Conexao.migrarBanco();
+        } catch (SQLException exception) {
+            SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(
+                    null,
+                    exception.getMessage(),
+                    "Falha ao preparar o banco de dados",
+                    JOptionPane.ERROR_MESSAGE));
+            return;
+        }
         SwingUtilities.invokeLater(() -> new TelaLogin().setVisible(true));
     }
 }

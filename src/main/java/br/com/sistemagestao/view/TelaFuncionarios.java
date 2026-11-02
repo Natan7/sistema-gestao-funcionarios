@@ -3,6 +3,8 @@ package br.com.sistemagestao.view;
 import br.com.sistemagestao.controller.FuncionarioController;
 import br.com.sistemagestao.model.Funcionario;
 import br.com.sistemagestao.util.Formatadores;
+import br.com.sistemagestao.util.FiltroSalario;
+import br.com.sistemagestao.util.Validacao;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -17,6 +19,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.ResolverStyle;
 import java.util.List;
 import java.util.Comparator;
+import java.util.UUID;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -30,9 +33,11 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
+import javax.swing.SwingConstants;
 import javax.swing.text.MaskFormatter;
 import java.text.ParseException;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableRowSorter;
 
 public class TelaFuncionarios extends JFrame {
@@ -45,7 +50,7 @@ public class TelaFuncionarios extends JFrame {
     private final JTextField campoSalario = new JTextField(12);
     private final JCheckBox campoStatus = new JCheckBox("Ativo", true);
     private final JLabel mensagem = new JLabel(" ");
-    private final DefaultTableModel modelo = new DefaultTableModel(new Object[]{"ID", "Nome", "Admissão", "Salário", "Status"}, 0) {
+    private final DefaultTableModel modelo = new DefaultTableModel(new Object[]{"UUID", "Nº", "Nome", "Admissão", "Salário", "Status"}, 0) {
         @Override
         public boolean isCellEditable(int linha, int coluna) {
             return false;
@@ -53,7 +58,7 @@ public class TelaFuncionarios extends JFrame {
     };
     private final JTable tabela = new JTable(modelo);
     private final TableRowSorter<DefaultTableModel> ordenador = new TableRowSorter<>(modelo);
-    private int funcionarioSelecionado;
+    private UUID funcionarioSelecionado;
 
     public TelaFuncionarios(JFrame proprietaria) {
         super("Gestão de Funcionários | Funcionários");
@@ -85,9 +90,24 @@ public class TelaFuncionarios extends JFrame {
         tabela.setFillsViewportHeight(true);
         tabela.getTableHeader().setFont(new Font("SansSerif", Font.BOLD, 12));
         ordenador.setSortable(0, false);
-        ordenador.setComparator(2, Comparator.comparing((String valor) -> LocalDate.parse(valor, FORMATO_DATA)));
-        ordenador.setComparator(3, Comparator.comparing((String valor) -> valorNumericoSalario(valor)));
+        ordenador.setSortable(1, false);
+        ordenador.setComparator(3, Comparator.comparing((String valor) -> LocalDate.parse(valor, FORMATO_DATA)));
+        ordenador.setComparator(4, Comparator.comparing((String valor) -> valorNumericoSalario(valor)));
         tabela.setRowSorter(ordenador);
+        tabela.removeColumn(tabela.getColumnModel().getColumn(0));
+        tabela.getColumnModel().getColumn(0).setCellRenderer(new DefaultTableCellRenderer() {
+            @Override
+            public java.awt.Component getTableCellRendererComponent(JTable tabela, Object valor, boolean selecionada,
+                    boolean foco, int linha, int coluna) {
+                super.getTableCellRendererComponent(tabela, valor, selecionada, foco, linha, coluna);
+                setHorizontalAlignment(SwingConstants.CENTER);
+                setText(Integer.toString(linha + 1));
+                return this;
+            }
+        });
+        tabela.getColumnModel().getColumn(0).setMinWidth(48);
+        tabela.getColumnModel().getColumn(0).setPreferredWidth(48);
+        tabela.getColumnModel().getColumn(0).setMaxWidth(56);
         tabela.getSelectionModel().addListSelectionListener(evento -> {
             if (!evento.getValueIsAdjusting()) {
                 preencherFormulario();
@@ -117,6 +137,7 @@ public class TelaFuncionarios extends JFrame {
         c.fill = GridBagConstraints.HORIZONTAL;
         adicionarCampo(painel, c, 0, 0, "Nome", campoNome);
         adicionarCampo(painel, c, 1, 0, "Admissão (DD/MM/AAAA)", campoAdmissao);
+        FiltroSalario.aplicar(campoSalario);
         adicionarCampo(painel, c, 2, 0, "Salário", campoSalario);
         c.gridx = 3;
         c.gridy = 1;
@@ -158,9 +179,16 @@ public class TelaFuncionarios extends JFrame {
     private void carregarFuncionarios() {
         try {
             List<Funcionario> funcionarios = controller.listarTodos();
-            modelo.setRowCount(0);
-            for (Funcionario funcionario : funcionarios) {
-                modelo.addRow(new Object[]{funcionario.getId(), funcionario.getNome(), Formatadores.data(funcionario.getDataAdmissao()), Formatadores.moeda(funcionario.getSalario()), funcionario.isStatus() ? "Ativo" : "Inativo"});
+            tabela.clearSelection();
+            funcionarioSelecionado = null;
+            tabela.setRowSorter(null);
+            try {
+                modelo.setRowCount(0);
+                for (Funcionario funcionario : funcionarios) {
+                    modelo.addRow(new Object[]{funcionario.getUuid(), null, funcionario.getNome(), Formatadores.data(funcionario.getDataAdmissao()), Formatadores.moeda(funcionario.getSalario()), funcionario.isStatus() ? "Ativo" : "Inativo"});
+                }
+            } finally {
+                tabela.setRowSorter(ordenador);
             }
             mensagem.setText(" ");
         } catch (SQLException exception) {
@@ -174,22 +202,28 @@ public class TelaFuncionarios extends JFrame {
             return;
         }
         linha = tabela.convertRowIndexToModel(linha);
-        funcionarioSelecionado = (int) modelo.getValueAt(linha, 0);
-        campoNome.setText((String) modelo.getValueAt(linha, 1));
-        campoAdmissao.setText(modelo.getValueAt(linha, 2).toString());
-        String salario = modelo.getValueAt(linha, 3).toString().replaceAll("[^0-9,.-]", "");
+        funcionarioSelecionado = (UUID) modelo.getValueAt(linha, 0);
+        campoNome.setText((String) modelo.getValueAt(linha, 2));
+        campoAdmissao.setText(modelo.getValueAt(linha, 3).toString());
+        String salario = modelo.getValueAt(linha, 4).toString().replaceAll("[^0-9,.-]", "");
+        if (salario.contains(",")) {
+            salario = salario.replace(".", "");
+        }
         campoSalario.setText(salario);
-        campoStatus.setSelected("Ativo".equals(modelo.getValueAt(linha, 4)));
+        campoStatus.setSelected("Ativo".equals(modelo.getValueAt(linha, 5)));
         mensagem.setText(" ");
     }
 
     private void salvar() {
         try {
-            String textoSalario = campoSalario.getText().trim().replace("R$", "").replace(" ", "");
+            String textoSalario = campoSalario.getText().replace("R$", "");
+            if (Validacao.contemEspacos(textoSalario) || Validacao.contemEspacos(campoAdmissao.getText())) {
+                throw new IllegalArgumentException("Data e salário não podem conter espaços.");
+            }
             if (textoSalario.contains(",")) {
                 textoSalario = textoSalario.replace(".", "").replace(',', '.');
             }
-            LocalDate admissao = LocalDate.parse(campoAdmissao.getText().trim(), FORMATO_DATA);
+            LocalDate admissao = LocalDate.parse(campoAdmissao.getText(), FORMATO_DATA);
             Funcionario funcionario = new Funcionario(funcionarioSelecionado, campoNome.getText(), admissao, new BigDecimal(textoSalario), campoStatus.isSelected());
             controller.salvar(funcionario);
             limparFormulario();
@@ -206,7 +240,7 @@ public class TelaFuncionarios extends JFrame {
     }
 
     private void excluir() {
-        if (funcionarioSelecionado <= 0) {
+        if (funcionarioSelecionado == null) {
             mensagem.setText("Selecione um funcionário na tabela.");
             return;
         }
@@ -226,7 +260,7 @@ public class TelaFuncionarios extends JFrame {
     }
 
     private void limparFormulario() {
-        funcionarioSelecionado = 0;
+        funcionarioSelecionado = null;
         tabela.clearSelection();
         campoNome.setText("");
         campoAdmissao.setText("");

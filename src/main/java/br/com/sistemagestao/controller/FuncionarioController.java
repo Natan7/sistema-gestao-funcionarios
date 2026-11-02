@@ -4,6 +4,7 @@ import br.com.sistemagestao.model.Funcionario;
 import br.com.sistemagestao.service.FuncionarioService;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.UUID;
 
 public class FuncionarioController {
 
@@ -25,7 +26,7 @@ public class FuncionarioController {
         return funcionarioService.salvar(funcionario);
     }
 
-    public void excluir(int id) throws SQLException {
-        funcionarioService.excluir(id);
+    public void excluir(UUID uuid) throws SQLException {
+        funcionarioService.excluir(uuid);
     }
 }

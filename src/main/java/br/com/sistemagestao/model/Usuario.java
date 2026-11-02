@@ -1,10 +1,11 @@
 package br.com.sistemagestao.model;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 public class Usuario {
 
-    private int id;
+    private UUID uuid;
     private String nome;
     private String email;
     private String senha;
@@ -13,16 +14,16 @@ public class Usuario {
     public Usuario() {
     }
 
-    public Usuario(int id, String nome, String email, String senha, LocalDateTime dataCadastro) {
-        this.id = id;
+    public Usuario(UUID uuid, String nome, String email, String senha, LocalDateTime dataCadastro) {
+        this.uuid = uuid;
         this.nome = nome;
         this.email = email;
         this.senha = senha;
         this.dataCadastro = dataCadastro;
     }
 
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
+    public UUID getUuid() { return uuid; }
+    public void setUuid(UUID uuid) { this.uuid = uuid; }
     public String getNome() { return nome; }
     public void setNome(String nome) { this.nome = nome; }
     public String getEmail() { return email; }

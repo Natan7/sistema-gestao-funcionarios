@@ -1,6 +1,7 @@
 package br.com.sistemagestao.view;
 
 import br.com.sistemagestao.controller.UsuarioController;
+import br.com.sistemagestao.util.FiltroSemEspacos;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -60,6 +61,8 @@ public class TelaCadastroUsuario extends JDialog {
         descricao.setForeground(new Color(100, 114, 120));
         inserir(formulario, descricao, c, 1);
         campo(formulario, c, 2, "Nome completo", campoNome);
+        FiltroSemEspacos.aplicar(campoEmail);
+        FiltroSemEspacos.aplicar(campoSenha);
         campo(formulario, c, 4, "E-mail", campoEmail);
         inserir(formulario, rotulo("Senha (mínimo de 8 caracteres)"), c, 6);
         estilizarCampo(campoSenha);

@@ -107,7 +107,10 @@ public class TelaPrincipal extends JFrame {
     }
 
     private void sair() {
+        javax.swing.UIManager.put("OptionPane.yesButtonText", "Sim");
+        javax.swing.UIManager.put("OptionPane.noButtonText", "Não");
         int resposta = javax.swing.JOptionPane.showConfirmDialog(this, "Deseja sair da sua conta?", "Confirmar saída", javax.swing.JOptionPane.YES_NO_OPTION);
+
         if (resposta == javax.swing.JOptionPane.YES_OPTION) {
             dispose();
             new TelaLogin().setVisible(true);

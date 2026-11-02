@@ -1,5 +1,7 @@
 package br.com.sistemagestao.connection;
 
+import org.flywaydb.core.Flyway;
+import org.flywaydb.core.api.FlywayException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -23,6 +25,22 @@ public final class Conexao {
             return DriverManager.getConnection(url, usuario, senha);
         } catch (SQLException exception) {
             throw new SQLException("Não foi possível conectar ao PostgreSQL. Verifique o serviço e as configurações DB_URL, DB_USER e DB_PASSWORD.", exception);
+        }
+    }
+
+    public static void migrarBanco() throws SQLException {
+        Properties arquivo = carregarConfiguracao();
+        String url = obterConfiguracao("DB_URL", "db.url", URL_PADRAO, arquivo);
+        String usuario = obterConfiguracao("DB_USER", "db.user", "postgres", arquivo);
+        String senha = obterConfiguracao("DB_PASSWORD", "db.password", "", arquivo);
+        try {
+            Flyway.configure()
+                    .dataSource(url, usuario, senha)
+                    .locations("classpath:db/migration")
+                    .load()
+                    .migrate();
+        } catch (FlywayException exception) {
+            throw new SQLException("Não foi possível aplicar as migrações do banco de dados.", exception);
         }
     }
 
