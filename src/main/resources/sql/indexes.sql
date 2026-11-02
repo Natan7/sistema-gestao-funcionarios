@@ -6,3 +6,6 @@ CREATE INDEX IF NOT EXISTS idx_funcionarios_nome
 
 CREATE INDEX IF NOT EXISTS idx_funcionarios_data_admissao
     ON funcionarios (data_admissao);
+
+CREATE INDEX IF NOT EXISTS idx_funcionarios_usuario_uuid
+    ON funcionarios (usuario_uuid);

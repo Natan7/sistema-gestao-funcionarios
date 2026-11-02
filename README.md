@@ -14,7 +14,21 @@ Aplicacao desktop Java Swing com FlatLaf, PostgreSQL, JDBC e arquitetura MVC + D
 2. Configure a conexao por variaveis de ambiente ou pelo arquivo externo `%USERPROFILE%\.sistema-gestao-funcionarios.properties` (modelo em `src/main/resources/config/application-local.properties`).
 3. Inicie a aplicacao. O Flyway cria e atualiza as tabelas automaticamente antes de abrir o login.
 
-As migracoes ficam em `src/main/resources/db/migration` e sao registradas na tabela `flyway_schema_history`. A V1 cria usuarios e funcionarios com UUID como chave primaria. Para reinicializar um banco de desenvolvimento e aplicar esta V1 unica, apague as tabelas antigas e o historico anterior antes de iniciar a aplicacao. Esta operacao apaga todos os dados:
+As migracoes ficam em `src/main/resources/db/migration` e sao registradas na tabela `flyway_schema_history`. A V1 cria usuarios e funcionarios com UUID como chave primaria; a V2 associa cada funcionario ao usuario proprietario. Em bancos com funcionarios anteriores a V2, o proprietario nao pode ser inferido: esses registros ficam sem acesso pela aplicacao ate que sejam atribuidos manualmente ao usuario correto.
+
+Para revisar registros antigos sem proprietario, consulte-os e atribua-os somente depois de confirmar a conta correta:
+
+```sql
+SELECT uuid, nome FROM funcionarios WHERE usuario_uuid IS NULL;
+
+UPDATE funcionarios AS f
+SET usuario_uuid = u.uuid
+FROM usuarios AS u
+WHERE u.email = 'email-do-proprietario@exemplo.com'
+	AND f.usuario_uuid IS NULL;
+```
+
+Para reinicializar um banco de desenvolvimento e aplicar a V1 desde o inicio, apague as tabelas antigas e o historico anterior antes de iniciar a aplicacao. Esta operacao apaga todos os dados:
 
 ```sql
 DROP TABLE IF EXISTS usuarios, funcionarios, flyway_schema_history CASCADE;

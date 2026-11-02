@@ -13,21 +13,25 @@ import java.util.UUID;
 
 public class FuncionarioDAO {
 
-    public List<Funcionario> listarTodos() throws SQLException {
-        String sql = "SELECT uuid, nome, data_admissao, salario, status FROM funcionarios ORDER BY nome";
+    public List<Funcionario> listarTodos(UUID usuarioUuid) throws SQLException {
+        String sql = "SELECT uuid, nome, data_admissao, salario, status FROM funcionarios WHERE usuario_uuid = ? ORDER BY nome";
         List<Funcionario> funcionarios = new ArrayList<>();
-        try (Connection conexao = Conexao.obterConexao(); PreparedStatement comando = conexao.prepareStatement(sql); ResultSet resultado = comando.executeQuery()) {
-            while (resultado.next()) {
-                funcionarios.add(new Funcionario(resultado.getObject("uuid", UUID.class), resultado.getString("nome"), resultado.getDate("data_admissao").toLocalDate(), resultado.getBigDecimal("salario"), resultado.getBoolean("status")));
+        try (Connection conexao = Conexao.obterConexao(); PreparedStatement comando = conexao.prepareStatement(sql)) {
+            comando.setObject(1, usuarioUuid);
+            try (ResultSet resultado = comando.executeQuery()) {
+                while (resultado.next()) {
+                    funcionarios.add(new Funcionario(resultado.getObject("uuid", UUID.class), resultado.getString("nome"), resultado.getDate("data_admissao").toLocalDate(), resultado.getBigDecimal("salario"), resultado.getBoolean("status")));
+                }
             }
         }
         return funcionarios;
     }
 
-    public Funcionario inserir(Funcionario funcionario) throws SQLException {
-        String sql = "INSERT INTO funcionarios (nome, data_admissao, salario, status) VALUES (?, ?, ?, ?) RETURNING uuid";
+    public Funcionario inserir(Funcionario funcionario, UUID usuarioUuid) throws SQLException {
+        String sql = "INSERT INTO funcionarios (nome, data_admissao, salario, status, usuario_uuid) VALUES (?, ?, ?, ?, ?) RETURNING uuid";
         try (Connection conexao = Conexao.obterConexao(); PreparedStatement comando = conexao.prepareStatement(sql)) {
             preencherComando(comando, funcionario);
+            comando.setObject(5, usuarioUuid);
             try (ResultSet chaves = comando.executeQuery()) {
                 if (chaves.next()) {
                     funcionario.setUuid(chaves.getObject("uuid", UUID.class));
@@ -37,18 +41,20 @@ public class FuncionarioDAO {
         }
     }
 
-    public boolean atualizar(Funcionario funcionario) throws SQLException {
-        String sql = "UPDATE funcionarios SET nome = ?, data_admissao = ?, salario = ?, status = ? WHERE uuid = ?";
+    public boolean atualizar(Funcionario funcionario, UUID usuarioUuid) throws SQLException {
+        String sql = "UPDATE funcionarios SET nome = ?, data_admissao = ?, salario = ?, status = ? WHERE uuid = ? AND usuario_uuid = ?";
         try (Connection conexao = Conexao.obterConexao(); PreparedStatement comando = conexao.prepareStatement(sql)) {
             preencherComando(comando, funcionario);
             comando.setObject(5, funcionario.getUuid());
+            comando.setObject(6, usuarioUuid);
             return comando.executeUpdate() == 1;
         }
     }
 
-    public boolean excluir(UUID uuid) throws SQLException {
-        try (Connection conexao = Conexao.obterConexao(); PreparedStatement comando = conexao.prepareStatement("DELETE FROM funcionarios WHERE uuid = ?")) {
+    public boolean excluir(UUID uuid, UUID usuarioUuid) throws SQLException {
+        try (Connection conexao = Conexao.obterConexao(); PreparedStatement comando = conexao.prepareStatement("DELETE FROM funcionarios WHERE uuid = ? AND usuario_uuid = ?")) {
             comando.setObject(1, uuid);
+            comando.setObject(2, usuarioUuid);
             return comando.executeUpdate() == 1;
         }
     }

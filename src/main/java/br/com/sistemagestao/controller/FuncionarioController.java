@@ -18,15 +18,15 @@ public class FuncionarioController {
         this.funcionarioService = funcionarioService;
     }
 
-    public List<Funcionario> listarTodos() throws SQLException {
-        return funcionarioService.listarTodos();
+    public List<Funcionario> listarTodos(UUID usuarioUuid) throws SQLException {
+        return funcionarioService.listarTodos(usuarioUuid);
     }
 
-    public Funcionario salvar(Funcionario funcionario) throws SQLException {
-        return funcionarioService.salvar(funcionario);
+    public Funcionario salvar(Funcionario funcionario, UUID usuarioUuid) throws SQLException {
+        return funcionarioService.salvar(funcionario, usuarioUuid);
     }
 
-    public void excluir(UUID uuid) throws SQLException {
-        funcionarioService.excluir(uuid);
+    public void excluir(UUID uuid, UUID usuarioUuid) throws SQLException {
+        funcionarioService.excluir(uuid, usuarioUuid);
     }
 }

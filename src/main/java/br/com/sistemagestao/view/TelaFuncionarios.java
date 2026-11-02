@@ -2,6 +2,7 @@ package br.com.sistemagestao.view;
 
 import br.com.sistemagestao.controller.FuncionarioController;
 import br.com.sistemagestao.model.Funcionario;
+import br.com.sistemagestao.model.Usuario;
 import br.com.sistemagestao.util.Formatadores;
 import br.com.sistemagestao.util.FiltroSalario;
 import br.com.sistemagestao.util.Validacao;
@@ -45,6 +46,7 @@ public class TelaFuncionarios extends JFrame {
     private static final Color PETROLEO = new Color(17, 61, 75);
     private static final DateTimeFormatter FORMATO_DATA = DateTimeFormatter.ofPattern("dd/MM/uuuu").withResolverStyle(ResolverStyle.STRICT);
     private final FuncionarioController controller = new FuncionarioController();
+    private final UUID usuarioUuid;
     private final JTextField campoNome = new JTextField(22);
     private final JFormattedTextField campoAdmissao = criarCampoAdmissao();
     private final JTextField campoSalario = new JTextField(12);
@@ -60,8 +62,12 @@ public class TelaFuncionarios extends JFrame {
     private final TableRowSorter<DefaultTableModel> ordenador = new TableRowSorter<>(modelo);
     private UUID funcionarioSelecionado;
 
-    public TelaFuncionarios(JFrame proprietaria) {
+    public TelaFuncionarios(JFrame proprietaria, Usuario usuario) {
         super("Gestão de Funcionários | Funcionários");
+        if (usuario == null || usuario.getUuid() == null) {
+            throw new IllegalArgumentException("É necessário um usuário autenticado para abrir a lista de funcionários.");
+        }
+        usuarioUuid = usuario.getUuid();
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setMinimumSize(new Dimension(900, 600));
         setSize(1120, 720);
@@ -178,7 +184,7 @@ public class TelaFuncionarios extends JFrame {
 
     private void carregarFuncionarios() {
         try {
-            List<Funcionario> funcionarios = controller.listarTodos();
+            List<Funcionario> funcionarios = controller.listarTodos(usuarioUuid);
             tabela.clearSelection();
             funcionarioSelecionado = null;
             tabela.setRowSorter(null);
@@ -225,7 +231,7 @@ public class TelaFuncionarios extends JFrame {
             }
             LocalDate admissao = LocalDate.parse(campoAdmissao.getText(), FORMATO_DATA);
             Funcionario funcionario = new Funcionario(funcionarioSelecionado, campoNome.getText(), admissao, new BigDecimal(textoSalario), campoStatus.isSelected());
-            controller.salvar(funcionario);
+            controller.salvar(funcionario, usuarioUuid);
             limparFormulario();
             carregarFuncionarios();
             mensagem.setForeground(new Color(35, 122, 82));
@@ -247,7 +253,7 @@ public class TelaFuncionarios extends JFrame {
         int resposta = JOptionPane.showConfirmDialog(this, "Deseja excluir este funcionário?", "Confirmar exclusão", JOptionPane.YES_NO_OPTION);
         if (resposta == JOptionPane.YES_OPTION) {
             try {
-                controller.excluir(funcionarioSelecionado);
+                controller.excluir(funcionarioSelecionado, usuarioUuid);
                 limparFormulario();
                 carregarFuncionarios();
                 mensagem.setForeground(new Color(35, 122, 82));

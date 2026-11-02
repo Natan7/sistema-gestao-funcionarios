@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
 
 CREATE TABLE IF NOT EXISTS funcionarios (
     uuid UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    usuario_uuid UUID NOT NULL REFERENCES usuarios(uuid) ON DELETE CASCADE,
     nome VARCHAR(150) NOT NULL,
     data_admissao DATE NOT NULL,
     salario NUMERIC(12, 2) NOT NULL CHECK (salario > 0),
