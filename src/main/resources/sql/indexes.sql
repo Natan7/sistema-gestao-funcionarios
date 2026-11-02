@@ -1,5 +1,3 @@
--- Execute conectado ao banco sistema_gestao_funcionarios.
--- O indice funcional mantem emails unicos sem diferenciar maiusculas/minusculas.
 CREATE UNIQUE INDEX IF NOT EXISTS idx_usuarios_email_lower
     ON usuarios (lower(email));
 

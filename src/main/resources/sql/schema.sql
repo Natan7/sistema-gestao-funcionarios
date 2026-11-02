@@ -1,4 +1,3 @@
--- Execute conectado ao banco sistema_gestao_funcionarios.
 CREATE TABLE IF NOT EXISTS usuarios (
     id SERIAL PRIMARY KEY,
     nome VARCHAR(150) NOT NULL,

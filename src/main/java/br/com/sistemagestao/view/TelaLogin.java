@@ -2,6 +2,7 @@ package br.com.sistemagestao.view;
 
 import br.com.sistemagestao.controller.LoginController;
 import br.com.sistemagestao.model.Usuario;
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -103,7 +104,10 @@ public class TelaLogin extends JFrame {
         adicionar(formulario, campoEmail, c, 3);
         adicionar(formulario, rotulo("Senha"), c, 4);
         estilizarCampo(campoSenha);
-        adicionar(formulario, campoSenha, c, 5);
+        campoSenha.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(211, 220, 223)),
+            BorderFactory.createEmptyBorder(7, 10, 7, 38)));
+        adicionar(formulario, sobreporBotaoSenha(criarBotaoVisibilidade()), c, 5);
         mensagem.setForeground(new Color(176, 55, 55));
         mensagem.setFont(new Font("SansSerif", Font.PLAIN, 12));
         adicionar(formulario, mensagem, c, 6);
@@ -134,6 +138,49 @@ public class TelaLogin extends JFrame {
         entrar.setFocusPainted(false);
         entrar.setPreferredSize(new Dimension(0, 44));
         return entrar;
+    }
+
+    private JButton criarBotaoVisibilidade() {
+        JButton botao = new JButton(new FlatSVGIcon("imagens/eye-off.svg", 18, 18));
+        char caractereOculto = campoSenha.getEchoChar();
+        botao.setFocusable(false);
+        botao.setBorderPainted(false);
+        botao.setContentAreaFilled(false);
+        botao.setMargin(new Insets(2, 4, 2, 4));
+        botao.setPreferredSize(new Dimension(28, 28));
+        botao.setToolTipText("Mostrar senha");
+        botao.addActionListener(evento -> {
+            boolean visivel = campoSenha.getEchoChar() != 0;
+            campoSenha.setEchoChar(visivel ? (char) 0 : caractereOculto);
+            botao.setIcon(new FlatSVGIcon(visivel
+                    ? "imagens/eye.svg"
+                    : "imagens/eye-off.svg", 18, 18));
+            botao.setToolTipText(visivel ? "Ocultar senha" : "Mostrar senha");
+        });
+        return botao;
+    }
+
+    private JPanel sobreporBotaoSenha(JButton botao) {
+        JPanel painel = new JPanel(null) {
+            @Override
+            public void doLayout() {
+                campoSenha.setBounds(0, 0, getWidth(), getHeight());
+                Dimension tamanhoBotao = botao.getPreferredSize();
+                botao.setBounds(getWidth() - tamanhoBotao.width - 6,
+                        (getHeight() - tamanhoBotao.height) / 2,
+                        tamanhoBotao.width, tamanhoBotao.height);
+            }
+
+            @Override
+            public Dimension getPreferredSize() {
+                return campoSenha.getPreferredSize();
+            }
+        };
+        painel.setOpaque(false);
+        painel.add(campoSenha);
+        painel.add(botao);
+        painel.setComponentZOrder(botao, 0);
+        return painel;
     }
 
     private void entrar() {

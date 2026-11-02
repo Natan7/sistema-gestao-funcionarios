@@ -19,7 +19,7 @@ public final class Validacao {
             throw new IllegalArgumentException("Informe um nome com pelo menos 2 caracteres.");
         }
         if (admissao == null) {
-            throw new IllegalArgumentException("Informe a data de admissão no formato AAAA-MM-DD.");
+            throw new IllegalArgumentException("Informe a data de admissão no formato DD/MM/AAAA.");
         }
         if (salario == null || salario.signum() <= 0) {
             throw new IllegalArgumentException("O salário deve ser maior que zero.");
